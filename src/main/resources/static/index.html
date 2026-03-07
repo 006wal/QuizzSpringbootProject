@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --surface2: #1c1c28;
+            --border: rgba(255,255,255,0.07);
+            --accent-math: #4f9cf9;
+            --accent-chem: #3ecf8e;
+            --accent-eng: #a78bfa;
+            --accent-warn: #f97316;
+            --text: #e8e8f0;
+            --muted: #5a5a72;
+            --gold: #f5c542;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(79,156,249,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(79,156,249,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .logo span { color: var(--accent-math); }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        .avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-math), var(--accent-eng));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; font-family: 'Syne', sans-serif;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            flex: 1;
+        }
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .card-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+        .pseudo-title { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
+        .pseudo-title span { color: var(--accent-math); }
+        .pseudo-sub { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+        .pseudo-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-family: 'DM Mono', monospace;
+            font-size: 16px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+            text-align: center;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .pseudo-input:focus { border-color: var(--accent-math); }
+        .pseudo-input::placeholder { color: var(--muted); }
+        .btn-start {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent-math);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,156,249,0.3); }
+        .subject-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .subject-btn {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+        }
+        .subject-btn:hover { transform: translateX(4px); }
+        .subject-btn.math:hover { border-color: var(--accent-math); }
+        .subject-btn.chem:hover { border-color: var(--accent-chem); }
+        .subject-btn.eng:hover  { border-color: var(--accent-eng); }
+        .subject-left { display: flex; align-items: center; gap: 14px; }
+        .subject-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .subject-icon.math { background: rgba(79,156,249,0.12); }
+        .subject-icon.chem { background: rgba(62,207,142,0.12); }
+        .subject-icon.eng  { background: rgba(167,139,250,0.12); }
+        .subject-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+        .subject-stats-mini { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .subject-arrow { color: var(--muted); font-size: 18px; }
+        .badge { padding: 5px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+        .badge.math { background: rgba(79,156,249,0.15); color: var(--accent-math); }
+        .badge.chem { background: rgba(62,207,142,0.15); color: var(--accent-chem); }
+        .badge.eng  { background: rgba(167,139,250,0.15); color: var(--accent-eng); }
+        .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .timer-display {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 30px; padding: 6px 14px; font-size: 15px; font-weight: 500; transition: all 0.3s;
+        }
+        .timer-display.urgent { border-color: var(--accent-warn); color: var(--accent-warn); animation: pulse 0.8s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .timer-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-chem); }
+        .timer-dot.urgent { background: var(--accent-warn); }
+        .progress-bar-wrap { background: var(--surface2); border-radius: 4px; height: 4px; margin-bottom: 28px; overflow: hidden; }
+        .progress-bar { height: 100%; border-radius: 4px; background: var(--accent-math); transition: width 0.4s ease; }
+        #q-text { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.4; margin-bottom: 24px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        @media (max-width: 500px) { .options-grid { grid-template-columns: 1fr; } }
+        .option-btn {
+            padding: 16px 14px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text); font-family: 'DM Mono', monospace;
+            font-size: 13px; cursor: pointer; transition: all 0.2s; text-align: left; line-height: 1.4;
+        }
+        .option-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.2); background: var(--surface); }
+        .option-btn:disabled { cursor: not-allowed; }
+        .option-btn.correct { border-color: var(--accent-chem)!important; background: rgba(62,207,142,0.1)!important; color: var(--accent-chem); }
+        .option-btn.wrong   { border-color: #f87171!important; background: rgba(248,113,113,0.1)!important; color: #f87171; }
+        .btn-next {
+            width: 100%; padding: 14px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text); font-family: 'Syne', sans-serif;
+            font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: none;
+        }
+        .btn-next:hover { background: var(--text); color: var(--bg); }
+        #result-screen { text-align: center; }
+        .result-emoji { font-size: 64px; margin-bottom: 16px; display: block; }
+        .result-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+        .result-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+        .score-display { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; color: var(--accent-math); line-height: 1; margin-bottom: 8px; }
+        .score-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+        .time-taken { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 30px; padding: 6px 14px; font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+        .result-actions { display: flex; flex-direction: column; gap: 10px; }
+        .btn-retry { padding: 14px; background: var(--accent-math); color: #000; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-retry:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,156,249,0.3); }
+        .btn-home { padding: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-home:hover { background: var(--surface); }
+        .sidebar { display: flex; flex-direction: column; gap: 16px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+        .stat-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px; }
+        .stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
+        .stat-box.highlight .stat-value { color: var(--gold); }
+        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+        .history-list::-webkit-scrollbar { width: 3px; }
+        .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .history-item { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity:0; transform: translateX(10px); } to { opacity:1; transform: translateX(0); } }
+        .history-left { display: flex; flex-direction: column; gap: 3px; }
+        .history-cat { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
+        .history-time { font-size: 10px; color: var(--muted); }
+        .history-right { text-align: right; }
+        .history-score { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+        .history-duration { font-size: 10px; color: var(--muted); }
+        .score-good { color: var(--accent-chem); }
+        .score-mid  { color: var(--gold); }
+        .score-bad  { color: #f87171; }
+        .empty-history { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+        .live-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; color: var(--accent-chem); letter-spacing: 1px; text-transform: uppercase; }
+        .live-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-chem); animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+        .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .streak-bar { display: flex; gap: 5px; margin-top: 14px; }
+        .streak-dot { flex: 1; height: 5px; border-radius: 3px; background: var(--surface2); transition: background 0.3s; }
+        .streak-dot.win  { background: var(--accent-chem); }
+        .streak-dot.lose { background: #f87171; }
+        .fade-up { animation: fadeUp 0.4s ease; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <header class="header">
+        <div class="logo">Quiz<span>Master</span></div>
+        <div class="user-badge" id="user-badge" style="display:none">
+            <div class="avatar" id="user-avatar">?</div>
+            <span id="user-pseudo-display">—</span>
+        </div>
+    </header>
+
+    <!-- PSEUDO SCREEN -->
+    <div id="pseudo-wrapper">
+        <div class="card fade-up" style="max-width:420px;margin:40px auto;text-align:center;">
+            <div style="font-size:48px;margin-bottom:16px;">🎮</div>
+            <div class="pseudo-title">Bienvenue sur<br><span>Quiz Master</span></div>
+            <p class="pseudo-sub" style="margin-top:8px;">Entre ton pseudo pour commencer à jouer</p>
+            <input type="text" id="pseudo-input" class="pseudo-input" placeholder="Ton pseudo..." maxlength="20" style="margin-top:28px;" />
+            <button class="btn-start" onclick="setPseudo()">Entrer dans l'arène →</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" style="display:none">
+        <div class="main-grid">
+
+            <!-- LEFT PANEL -->
+            <div class="card fade-up">
+
+                <!-- HOME -->
+                <div id="home-screen">
+                    <p class="card-title">Choisir une matière</p>
+                    <div class="subject-grid">
+                        <button class="subject-btn math" onclick="startQuiz('Maths')">
+                            <div class="subject-left">
+                                <div class="subject-icon math">📐</div>
+                                <div>
+                                    <div class="subject-name">Mathématiques</div>
+                                    <div class="subject-stats-mini" id="mini-maths">— parties jouées</div>
+                                </div>
+                            </div>
+                            <div class="subject-arrow">→</div>
+                        </button>
+                        <button class="subject-btn chem" onclick="startQuiz('Chimie')">
+                            <div class="subject-left">
+                                <div class="subject-icon chem">🧪</div>
+                                <div>
+                                    <div class="subject-name">Chimie</div>
+                                    <div class="subject-stats-mini" id="mini-chimie">— parties jouées</div>
+                                </div>
+                            </div>
+                            <div class="subject-arrow">→</div>
+                        </button>
+                        <button class="subject-btn eng" onclick="startQuiz('Anglais')">
+                            <div class="subject-left">
+                                <div class="subject-icon eng">🇬🇧</div>
+                                <div>
+                                    <div class="subject-name">Anglais</div>
+                                    <div class="subject-stats-mini" id="mini-anglais">— parties jouées</div>
+                                </div>
+                            </div>
+                            <div class="subject-arrow">→</div>
+                        </button>
+                    </div>
+                    <div style="margin-top:24px;">
+                        <p style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Dernières parties</p>
+                        <div class="streak-bar" id="streak-bar">
+                            <div class="streak-dot"></div><div class="streak-dot"></div>
+                            <div class="streak-dot"></div><div class="streak-dot"></div>
+                            <div class="streak-dot"></div><div class="streak-dot"></div>
+                            <div class="streak-dot"></div><div class="streak-dot"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUESTION -->
+                <div id="question-screen" style="display:none">
+                    <div class="quiz-header">
+                        <span id="badge" class="badge">—</span>
+                        <div class="timer-display" id="timer-display">
+                            <div class="timer-dot" id="timer-dot"></div>
+                            <span id="timer-text">00:00</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-bottom:16px;display:flex;justify-content:space-between;">
+                        <span id="q-count">0/0</span>
+                        <span>Score: <span id="live-score" style="color:var(--accent-chem)">0</span></span>
+                    </div>
+                    <h2 id="q-text"></h2>
+                    <div class="options-grid" id="options"></div>
+                    <button id="btn-next" class="btn-next" onclick="handleNext()">Continuer →</button>
+                </div>
+
+                <!-- RESULT -->
+                <div id="result-screen" style="display:none">
+                    <span id="result-emoji" class="result-emoji">🏆</span>
+                    <div class="result-title" id="result-title">Quiz terminé !</div>
+                    <p class="result-sub" id="result-sub">Voici ton résultat</p>
+                    <div class="score-display"><span id="final-score">0</span>/<span id="total-q">0</span></div>
+                    <div class="score-label">bonnes réponses</div>
+                    <div class="time-taken">⏱ Temps : <span id="result-time">—</span></div>
+                    <div class="result-actions">
+                        <button class="btn-retry" onclick="retryQuiz()">Rejouer cette matière</button>
+                        <button class="btn-home" onclick="goHome()">← Choisir une autre matière</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-title-row">
+                        <span class="card-title" style="margin:0">Statistiques</span>
+                        <span class="live-dot">Live</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-total">0</div>
+                            <div class="stat-label">Parties</div>
+                        </div>
+                        <div class="stat-box highlight">
+                            <div class="stat-value" id="stat-best">—</div>
+                            <div class="stat-label">Meilleur score</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-correct">0</div>
+                            <div class="stat-label">Bonnes rép.</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-avg">—</div>
+                            <div class="stat-label">Moy. temps</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="flex:1">
+                    <div class="card-title-row">
+                        <span class="card-title" style="margin:0">Historique</span>
+                        <button onclick="clearHistory()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;letter-spacing:1px;">EFFACER</button>
+                    </div>
+                    <div class="history-list" id="history-list">
+                        <div class="empty-history">Aucune partie jouée<br>pour l'instant 🎯</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let pseudo = '';
+    let currentCategory = '';
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let quizStartTime = 0;
+
+    let stats = JSON.parse(localStorage.getItem('qm_stats') || '{"total":0,"correct":0,"history":[],"byCategory":{}}');
+
+    function setPseudo() {
+        const input = document.getElementById('pseudo-input').value.trim();
+        if (!input) { document.getElementById('pseudo-input').focus(); return; }
+        pseudo = input;
+        document.getElementById('user-pseudo-display').textContent = pseudo;
+        document.getElementById('user-avatar').textContent = pseudo[0].toUpperCase();
+        document.getElementById('user-badge').style.display = 'flex';
+        document.getElementById('pseudo-wrapper').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+        showHome();
+        renderStats();
+        renderHistory();
+    }
+
+    document.getElementById('pseudo-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') setPseudo();
+    });
+
+    function showHome() {
+        document.getElementById('home-screen').style.display = 'block';
+        document.getElementById('question-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
+        updateMiniStats();
+        renderStreakBar();
+    }
+
+    function goHome() { stopTimer(); showHome(); }
+    function retryQuiz() { stopTimer(); startQuiz(currentCategory); }
+
+    const themes = {
+        'Maths':  { cls: 'math',  color: '#4f9cf9' },
+        'Chimie': { cls: 'chem',  color: '#3ecf8e' },
+        'Anglais':{ cls: 'eng',   color: '#a78bfa' }
+    };
+
+    async function startQuiz(category) {
+        currentCategory = category;
+        currentIndex = 0;
+        score = 0;
+        timerSeconds = 0;
+        quizStartTime = Date.now();
+
+        document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('question-screen').style.display = 'block';
+        document.getElementById('result-screen').style.display = 'none';
+
+        const badge = document.getElementById('badge');
+        badge.textContent = category;
+        badge.className = `badge ${themes[category].cls}`;
+        document.getElementById('progress-bar').style.background = themes[category].color;
+        document.getElementById('live-score').textContent = '0';
+
+        try {
+            const response = await fetch(`http://localhost:8080/quiz/category/${category}`);
+            currentQuestions = await response.json();
+            if (currentQuestions.length > 0) {
+                startTimer();
+                renderQuestion();
+            } else {
+                alert("Aucune question pour cette matière.");
+                showHome();
+            }
+        } catch (err) {
+            alert("Erreur de connexion avec le serveur.");
+            showHome();
+        }
+    }
+
+    function renderQuestion() {
+        const q = currentQuestions[currentIndex];
+        const total = currentQuestions.length;
+        document.getElementById('q-text').textContent = q.questionText;
+        document.getElementById('q-count').textContent = `${currentIndex + 1}/${total}`;
+        document.getElementById('progress-bar').style.width = `${(currentIndex / total) * 100}%`;
+        document.getElementById('btn-next').style.display = 'none';
+
+        const container = document.getElementById('options');
+        container.innerHTML = '';
+        [q.option1, q.option2, q.option3, q.option4].forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = choice;
+            btn.onclick = () => validateAnswer(btn, choice, q.correctAnswer);
+            container.appendChild(btn);
+        });
+    }
+
+    function validateAnswer(btn, selected, correct) {
+        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+        if (selected === correct) {
+            btn.classList.add('correct');
+            score++;
+            document.getElementById('live-score').textContent = score;
+        } else {
+            btn.classList.add('wrong');
+            document.querySelectorAll('.option-btn').forEach(b => {
+                if (b.textContent === correct) b.classList.add('correct');
+            });
+        }
+        document.getElementById('btn-next').style.display = 'block';
+    }
+
+    function handleNext() {
+        currentIndex++;
+        if (currentIndex < currentQuestions.length) renderQuestion();
+        else finishQuiz();
+    }
+
+    function finishQuiz() {
+        stopTimer();
+        const total = currentQuestions.length;
+        const pct = score / total;
+        const duration = Math.round((Date.now() - quizStartTime) / 1000);
+
+        let emoji = '😢', titleText = 'Peut mieux faire...';
+        if (pct >= 0.8) { emoji = '🏆'; titleText = 'Excellent travail !'; }
+        else if (pct >= 0.5) { emoji = '👍'; titleText = 'Bonne performance !'; }
+
+        document.getElementById('result-emoji').textContent = emoji;
+        document.getElementById('result-title').textContent = titleText;
+        document.getElementById('result-sub').textContent = `${pseudo}, voici ton résultat pour ${currentCategory}`;
+        document.getElementById('final-score').textContent = score;
+        document.getElementById('total-q').textContent = total;
+        document.getElementById('result-time').textContent = formatTime(duration);
+        document.getElementById('question-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('progress-bar').style.width = '100%';
+
+        saveResult(currentCategory, score, total, duration);
+        renderStats();
+        renderHistory();
+    }
+
+    function startTimer() {
+        timerSeconds = 0;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => { timerSeconds++; updateTimerDisplay(); }, 1000);
+    }
+
+    function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+    function updateTimerDisplay() {
+        const display = document.getElementById('timer-display');
+        const dot = document.getElementById('timer-dot');
+        document.getElementById('timer-text').textContent = formatTime(timerSeconds);
+        const isUrgent = timerSeconds > 120;
+        display.classList.toggle('urgent', isUrgent);
+        dot.classList.toggle('urgent', isUrgent);
+    }
+
+    function formatTime(s) {
+        return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+    }
+
+    function saveResult(cat, sc, total, duration) {
+        stats.total++;
+        stats.correct += sc;
+        if (!stats.byCategory[cat]) stats.byCategory[cat] = { games: 0, best: 0, totalTime: 0 };
+        stats.byCategory[cat].games++;
+        stats.byCategory[cat].totalTime += duration;
+        if (sc > stats.byCategory[cat].best) stats.byCategory[cat].best = sc;
+        stats.history.unshift({
+            pseudo, cat, score: sc, total, duration,
+            time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            win: sc / total >= 0.5
+        });
+        if (stats.history.length > 50) stats.history.pop();
+        localStorage.setItem('qm_stats', JSON.stringify(stats));
+    }
+
+    function renderStats() {
+        document.getElementById('stat-total').textContent = stats.total;
+        document.getElementById('stat-correct').textContent = stats.correct;
+        let best = null;
+        Object.values(stats.byCategory).forEach(c => { if (best === null || c.best > best) best = c.best; });
+        document.getElementById('stat-best').textContent = best !== null ? best : '—';
+        const allTimes = stats.history.map(h => h.duration);
+        if (allTimes.length) {
+            const avg = Math.round(allTimes.reduce((a, b) => a + b, 0) / allTimes.length);
+            document.getElementById('stat-avg').textContent = formatTime(avg);
+        }
+    }
+
+    function updateMiniStats() {
+        ['Maths','Chimie','Anglais'].forEach(cat => {
+            const c = stats.byCategory[cat];
+            document.getElementById(`mini-${cat.toLowerCase()}`).textContent =
+                c ? `${c.games} partie${c.games > 1 ? 's' : ''} · meilleur: ${c.best}` : '— parties jouées';
+        });
+    }
+
+    function renderStreakBar() {
+        const dots = document.querySelectorAll('.streak-dot');
+        const last8 = stats.history.slice(0, 8);
+        dots.forEach((dot, i) => {
+            dot.className = 'streak-dot';
+            if (last8[i]) dot.classList.add(last8[i].win ? 'win' : 'lose');
+        });
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('history-list');
+        if (!stats.history.length) {
+            list.innerHTML = '<div class="empty-history">Aucune partie jouée<br>pour l\'instant 🎯</div>';
+            return;
+        }
+        list.innerHTML = stats.history.slice(0, 15).map(h => {
+            const pct = h.score / h.total;
+            const cls = pct >= 0.8 ? 'score-good' : pct >= 0.5 ? 'score-mid' : 'score-bad';
+            const icon = { Maths:'📐', Chimie:'🧪', Anglais:'🇬🇧' }[h.cat] || '📋';
+            return `<div class="history-item">
+                <div class="history-left">
+                    <span class="history-cat">${icon} ${h.cat}</span>
+                    <span class="history-time">${h.pseudo} · ${h.time}</span>
+                </div>
+                <div class="history-right">
+                    <div class="history-score ${cls}">${h.score}/${h.total}</div>
+                    <div class="history-duration">⏱ ${formatTime(h.duration)}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function clearHistory() {
+        if (!confirm('Effacer tout l\'historique ?')) return;
+        stats = { total: 0, correct: 0, history: [], byCategory: {} };
+        localStorage.setItem('qm_stats', JSON.stringify(stats));
+        renderStats(); renderHistory(); renderStreakBar(); updateMiniStats();
+    }
+</script>
+</body>
+</html>
